@@ -10,13 +10,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.LifecycleEventObserver
 import com.zw.countdowntimer.ui.theme.CountDownTimerTheme
 import com.zw.countdowntimer.ui.theme.Purple40
 import com.zw.countdowntimer.ui.timer.TimerView
@@ -30,12 +33,20 @@ class MainActivity : ComponentActivity() {
 		registerForActivityResult(ActivityResultContracts.RequestPermission()) { permissions -> }
 
 
-
-
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContent {
 			val viewModel = hiltViewModel<CountDownTimerViewModel>()
+			val lifecycle = LocalLifecycleOwner.current.lifecycle
+			DisposableEffect(lifecycle) {
+				val observer = LifecycleEventObserver { _, event ->
+					viewModel.event = event
+				}
+				lifecycle.addObserver(observer)
+				onDispose {
+					lifecycle.removeObserver(observer)
+				}
+			}
 			CountDownTimerTheme {
 				Surface(
 					modifier = Modifier.fillMaxSize(), color = Color.Black
@@ -50,7 +61,7 @@ class MainActivity : ComponentActivity() {
 							modifier = Modifier.size(300.dp),
 							isTimerRunning = viewModel.isPlay.collectAsState().value,
 							callback = {viewModel.onConsume(it)},
-							stop = viewModel::stop,
+							stop = {viewModel.stop()},
 							currentTime = viewModel.currentTime
 						)
 					}

@@ -82,7 +82,7 @@ fun TimerView(
 
             Button(
                 onClick = {
-                    if (currentTime <= 0L) {
+                    if (!isTimerRunning) {
                         callback(TimerEvent.IsPlay)
                     } else {
                         callback(TimerEvent.IsPause)

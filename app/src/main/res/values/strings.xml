@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CountDownTimer</string>
+    <string name="count_down_timer_stopped">Count down timer Stopped</string>
 </resources>

@@ -8,20 +8,23 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.newage.feature.pomodoro.base.CountTimer
+import com.zw.countdowntimer.core.CountTimer
 import com.zw.countdowntimer.R
 import com.zw.countdowntimer.ui.MainActivity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,9 +43,10 @@ class CountDownTimerViewModel @Inject constructor(@ApplicationContext context: C
 	private var duration = 60000L
 
 	var currentTime by mutableStateOf(duration)
+	var event = Lifecycle.Event.ON_ANY
 
 	private val _isPlay: MutableStateFlow<Boolean> = MutableStateFlow(false)
-	val isPlay = _isPlay
+	val isPlay : StateFlow<Boolean> = _isPlay
 
 	fun onConsume(timerEvent: TimerEvent) {
 		viewModelScope.launch {
@@ -66,8 +70,15 @@ class CountDownTimerViewModel @Inject constructor(@ApplicationContext context: C
 		}
 
 		override fun onTimerFinish() {
-			currentTime = duration
-			postNotification(context)
+			viewModelScope.launch {
+				currentTime = duration
+				_isPlay.emit(false)
+				if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+					postNotification(context)
+				} else {
+					Toast.makeText(context,context.getString(R.string.count_down_timer_stopped),Toast.LENGTH_SHORT).show()
+				}
+			}
 		}
 
 	}
@@ -79,7 +90,11 @@ class CountDownTimerViewModel @Inject constructor(@ApplicationContext context: C
 	}
 
 	fun stop() {
-		timeCounter.stop()
+		viewModelScope.launch {
+			timeCounter.stop()
+			currentTime = duration
+			_isPlay.emit(false)
+		}
 	}
 
 	fun restart() {
@@ -113,7 +128,7 @@ class CountDownTimerViewModel @Inject constructor(@ApplicationContext context: C
 		}
 
 		val notification: NotificationCompat.Builder =
-			NotificationCompat.Builder(context, CHANNEL_ID).setContentTitle(context.getString(R.string.app_name)).setContentText("Coun down timer Stopped")
+			NotificationCompat.Builder(context, CHANNEL_ID).setContentTitle(context.getString(R.string.app_name)).setContentText(context.getString(R.string.count_down_timer_stopped))
 				.setContentIntent(intent).setSmallIcon(R.drawable.notification_icon)
 				.setAutoCancel(true)
 		if (ActivityCompat.checkSelfPermission(

@@ -1,4 +1,4 @@
-package com.newage.feature.pomodoro.base
+package com.zw.countdowntimer.core
 
 import android.os.CountDownTimer
 
@@ -58,6 +58,7 @@ abstract class CountTimer {
     }
 
     fun stop(){
+        countDownTimer.cancel()
         countDownTimer.onFinish()
     }
 
